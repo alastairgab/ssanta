@@ -1,0 +1,276 @@
+{
+  "manifest": {
+    "format": "secret-santa-backup",
+    "schemaVersion": 1,
+    "appVersion": "2.0.0",
+    "exportedAt": "2026-10-13T02:33:18.609Z",
+    "containsAssignments": true,
+    "encrypted": false,
+    "counts": {
+      "series": 1,
+      "events": 1,
+      "participants": 4,
+      "relationships": 0,
+      "households": 0,
+      "history": 0,
+      "draws": 1,
+      "wishlists": 0,
+      "questions": 0,
+      "replies": 0,
+      "settings": 0
+    }
+  },
+  "data": {
+    "series": [
+      {
+        "schemaVersion": 1,
+        "id": "se_wfqcrefwtd6p8fvtr7ne0zhd",
+        "name": "Family Christmas",
+        "createdAt": "2026-10-13T02:33:18.579Z"
+      }
+    ],
+    "events": [
+      {
+        "schemaVersion": 1,
+        "id": "ev_0nr6k143tjre1h1je28a15tf",
+        "seriesId": "se_wfqcrefwtd6p8fvtr7ne0zhd",
+        "name": "Family Christmas 2025",
+        "year": 2025,
+        "currency": "AUD",
+        "theme": "classic",
+        "participantIds": [
+          "p_w0xx02zkwnj69v6vj08s8c7d",
+          "p_jsd3h7ttmfjq5js9gyfr88k8",
+          "p_nz9mgc2sm4sq0gb7236asqs3",
+          "p_j0d9fspqyhyk8d9qxjdzej53"
+        ],
+        "status": "draw-confirmed",
+        "rules": {
+          "forced": [],
+          "forbidden": [],
+          "preventReciprocal": false,
+          "relationshipPolicies": {
+            "partner": "mutual",
+            "parent-child": "none",
+            "sibling": "none",
+            "household": "mutual",
+            "custom": "none"
+          },
+          "relationshipOverrides": {},
+          "householdExclusion": true,
+          "householdOverrides": {},
+          "history": {
+            "mode": "last-1",
+            "strength": "hard",
+            "sourceSeriesIds": [
+              "se_wfqcrefwtd6p8fvtr7ne0zhd"
+            ],
+            "recencyDecay": 0.6,
+            "frequencyWeight": 0.5,
+            "discourageReverse": false
+          }
+        },
+        "codenamesEnabled": true,
+        "codenames": {
+          "p_w0xx02zkwnj69v6vj08s8c7d": "The Dashing Bell",
+          "p_jsd3h7ttmfjq5js9gyfr88k8": "The Shimmering Shadow",
+          "p_nz9mgc2sm4sq0gb7236asqs3": "The Nutcracker Phantom",
+          "p_j0d9fspqyhyk8d9qxjdzej53": "The Festive Mitten"
+        },
+        "concealAssignments": true,
+        "includeWishlists": true,
+        "createdAt": "2026-10-13T02:33:18.591Z",
+        "updatedAt": "2026-10-13T02:33:18.608Z",
+        "activeDrawId": "dr_bn797zzkhdy8z3zj672beb1k",
+        "relayKeys": {
+          "publicKeyJwk": {
+            "kty": "EC",
+            "crv": "P-256",
+            "x": "zkiZCdHnO5fSai1x-q90QlTgvYswIXOmIJxcbpTII7Y",
+            "y": "7_N4KmBF5sa8hL1pSbmRD2PJWFrbIvwDKyFdtdyZZns"
+          },
+          "privateKeyJwk": {
+            "key_ops": [
+              "deriveBits"
+            ],
+            "ext": true,
+            "kty": "EC",
+            "x": "zkiZCdHnO5fSai1x-q90QlTgvYswIXOmIJxcbpTII7Y",
+            "y": "7_N4KmBF5sa8hL1pSbmRD2PJWFrbIvwDKyFdtdyZZns",
+            "crv": "P-256",
+            "d": "wNjzzWPtCDE-incMfbPPVpDuwlu081JNGwdjH2VrS4w"
+          },
+          "createdAt": "2026-10-13T02:33:18.607Z"
+        }
+      }
+    ],
+    "participants": [
+      {
+        "schemaVersion": 1,
+        "id": "p_j0d9fspqyhyk8d9qxjdzej53",
+        "displayName": "Pumbaa",
+        "active": true,
+        "createdAt": "2026-10-13T02:33:18.590Z",
+        "updatedAt": "2026-10-13T02:33:18.590Z"
+      },
+      {
+        "schemaVersion": 1,
+        "id": "p_jsd3h7ttmfjq5js9gyfr88k8",
+        "displayName": "Nala",
+        "active": true,
+        "createdAt": "2026-10-13T02:33:18.589Z",
+        "updatedAt": "2026-10-13T02:33:18.589Z"
+      },
+      {
+        "schemaVersion": 1,
+        "id": "p_nz9mgc2sm4sq0gb7236asqs3",
+        "displayName": "Timon",
+        "active": true,
+        "createdAt": "2026-10-13T02:33:18.590Z",
+        "updatedAt": "2026-10-13T02:33:18.590Z"
+      },
+      {
+        "schemaVersion": 1,
+        "id": "p_w0xx02zkwnj69v6vj08s8c7d",
+        "displayName": "Simba",
+        "active": true,
+        "createdAt": "2026-10-13T02:33:18.589Z",
+        "updatedAt": "2026-10-13T02:33:18.589Z"
+      }
+    ],
+    "relationships": [],
+    "households": [],
+    "history": [],
+    "draws": [
+      {
+        "schemaVersion": 1,
+        "id": "dr_bn797zzkhdy8z3zj672beb1k",
+        "eventId": "ev_0nr6k143tjre1h1je28a15tf",
+        "version": 1,
+        "status": "confirmed",
+        "reason": "initial",
+        "createdAt": "2026-10-13T02:33:18.603Z",
+        "snapshot": {
+          "schemaVersion": 1,
+          "eventId": "ev_0nr6k143tjre1h1je28a15tf",
+          "seriesId": "se_wfqcrefwtd6p8fvtr7ne0zhd",
+          "eventName": "Family Christmas 2025",
+          "year": 2025,
+          "version": 1,
+          "participants": [
+            {
+              "id": "p_j0d9fspqyhyk8d9qxjdzej53",
+              "displayName": "Pumbaa",
+              "codename": "The Festive Mitten"
+            },
+            {
+              "id": "p_jsd3h7ttmfjq5js9gyfr88k8",
+              "displayName": "Nala",
+              "codename": "The Shimmering Shadow"
+            },
+            {
+              "id": "p_nz9mgc2sm4sq0gb7236asqs3",
+              "displayName": "Timon",
+              "codename": "The Nutcracker Phantom"
+            },
+            {
+              "id": "p_w0xx02zkwnj69v6vj08s8c7d",
+              "displayName": "Simba",
+              "codename": "The Dashing Bell"
+            }
+          ],
+          "assignments": [
+            {
+              "giverId": "p_j0d9fspqyhyk8d9qxjdzej53",
+              "recipientId": "p_jsd3h7ttmfjq5js9gyfr88k8"
+            },
+            {
+              "giverId": "p_jsd3h7ttmfjq5js9gyfr88k8",
+              "recipientId": "p_j0d9fspqyhyk8d9qxjdzej53"
+            },
+            {
+              "giverId": "p_nz9mgc2sm4sq0gb7236asqs3",
+              "recipientId": "p_w0xx02zkwnj69v6vj08s8c7d"
+            },
+            {
+              "giverId": "p_w0xx02zkwnj69v6vj08s8c7d",
+              "recipientId": "p_nz9mgc2sm4sq0gb7236asqs3"
+            }
+          ],
+          "rules": {
+            "forced": [],
+            "forbidden": [],
+            "preventReciprocal": false,
+            "relationshipPolicies": {
+              "partner": "mutual",
+              "parent-child": "none",
+              "sibling": "none",
+              "household": "mutual",
+              "custom": "none"
+            },
+            "relationshipOverrides": {},
+            "householdExclusion": true,
+            "householdOverrides": {},
+            "history": {
+              "mode": "last-1",
+              "strength": "hard",
+              "sourceSeriesIds": [
+                "se_wfqcrefwtd6p8fvtr7ne0zhd"
+              ],
+              "recencyDecay": 0.6,
+              "frequencyWeight": 0.5,
+              "discourageReverse": false
+            }
+          },
+          "generatedAt": "2026-10-13T02:33:18.603Z",
+          "solver": {
+            "method": "matching",
+            "provenOptimal": true,
+            "softScore": 0,
+            "repeatCount": 0,
+            "nodesExplored": 1,
+            "elapsedMs": 0
+          }
+        },
+        "distribution": {
+          "p_j0d9fspqyhyk8d9qxjdzej53": {
+            "giverId": "p_j0d9fspqyhyk8d9qxjdzej53",
+            "issueNumber": 0,
+            "issues": [],
+            "shared": false
+          },
+          "p_jsd3h7ttmfjq5js9gyfr88k8": {
+            "giverId": "p_jsd3h7ttmfjq5js9gyfr88k8",
+            "issueNumber": 0,
+            "issues": [],
+            "shared": false
+          },
+          "p_nz9mgc2sm4sq0gb7236asqs3": {
+            "giverId": "p_nz9mgc2sm4sq0gb7236asqs3",
+            "issueNumber": 0,
+            "issues": [],
+            "shared": false
+          },
+          "p_w0xx02zkwnj69v6vj08s8c7d": {
+            "giverId": "p_w0xx02zkwnj69v6vj08s8c7d",
+            "issueNumber": 0,
+            "issues": [],
+            "shared": false
+          }
+        },
+        "integrity": {
+          "algorithm": "SHA-256",
+          "canonicalisation": "ss-canonical-json-v1",
+          "digestHex": "c084bfa36ec6c81ad680186c7342f873c3027908c66138c8d539b34d30d44524",
+          "shortFingerprint": "C084-BFA3-6EC6",
+          "computedAt": "2026-10-13T02:33:18.606Z"
+        },
+        "confirmedAt": "2026-10-13T02:33:18.607Z"
+      }
+    ],
+    "wishlists": [],
+    "questions": [],
+    "replies": [],
+    "settings": []
+  }
+}

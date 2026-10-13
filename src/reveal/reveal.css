@@ -1,0 +1,469 @@
+/* ==========================================================================
+   Participant reveal experience — four themes.
+   Pure CSS animations (no animation framework). Everything respects
+   prefers-reduced-motion (handled in JS by skipping the opening phase, and
+   globally in index.css).
+   ========================================================================== */
+
+.reveal-root {
+  min-height: 100vh;
+  min-height: 100dvh;
+  position: relative;
+  overflow-x: hidden;
+  color: #fff;
+}
+
+/* ---------- Snowfall ---------- */
+.snow {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+}
+.snow i {
+  position: absolute;
+  top: -10px;
+  width: var(--s, 6px);
+  height: var(--s, 6px);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, var(--o, 0.8));
+  filter: blur(var(--b, 0px));
+  animation: snow-fall var(--d, 12s) linear var(--delay, 0s) infinite;
+  left: var(--x, 50%);
+}
+@keyframes snow-fall {
+  0% { transform: translate3d(0, -10px, 0); }
+  50% { transform: translate3d(var(--drift, 20px), 50vh, 0); }
+  100% { transform: translate3d(0, 105vh, 0); }
+}
+
+/* ---------- Shared stage ---------- */
+.stage {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 360px;
+  perspective: 1200px;
+}
+.reveal-object {
+  cursor: pointer;
+  background: none;
+  border: 0;
+  padding: 0;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+.reveal-object:focus-visible {
+  outline: 4px solid #f7efd9;
+  outline-offset: 10px;
+  border-radius: 18px;
+}
+.reveal-hint {
+  animation: hint-bob 2.4s ease-in-out infinite;
+}
+@keyframes hint-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.fade-up {
+  animation: fade-up 0.9s cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(24px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+.recipient-name {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
+  line-height: 1.05;
+}
+
+/* ==========================================================================
+   Theme A — Classic Christmas Letter
+   ========================================================================== */
+.theme-classic {
+  background:
+    radial-gradient(ellipse at top, rgba(255, 220, 180, 0.18), transparent 60%),
+    radial-gradient(circle at 20% 80%, rgba(0, 0, 0, 0.25), transparent 50%),
+    #8f1d1d;
+}
+.envelope {
+  width: min(340px, 82vw);
+  aspect-ratio: 1.45;
+  position: relative;
+  transform-style: preserve-3d;
+  filter: drop-shadow(0 22px 30px rgba(0, 0, 0, 0.35));
+}
+.envelope .env-back,
+.envelope .env-front {
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+}
+.envelope .env-back { background: #e9dcc0; }
+.envelope .env-front {
+  background:
+    linear-gradient(to top right, #f3e8d0 49.5%, transparent 50%) left / 50.5% 100% no-repeat,
+    linear-gradient(to top left, #f3e8d0 49.5%, transparent 50%) right / 50.5% 100% no-repeat,
+    linear-gradient(to top, #efe2c6 0 52%, transparent 52%);
+  z-index: 3;
+}
+.envelope .env-front::after {
+  /* candy-cane edging */
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  padding: 7px;
+  background: repeating-linear-gradient(45deg, #c62828 0 10px, #fbfaf6 10px 20px, #1e6b45 20px 30px, #fbfaf6 30px 40px);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+.envelope .env-flap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 58%;
+  background: linear-gradient(#e2d1ad, #f0e4c9);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  transform-origin: top center;
+  z-index: 4;
+  transition: transform 0.7s cubic-bezier(.4,.1,.3,1);
+}
+.envelope .env-seal {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 62px;
+  height: 62px;
+  margin: -31px 0 0 -31px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #e45454, #9e1b1b 60%, #7a1212);
+  box-shadow: 0 3px 6px rgba(0,0,0,.35), inset 0 -3px 6px rgba(0,0,0,.3);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s, transform 0.4s;
+}
+.envelope .env-letter {
+  position: absolute;
+  left: 7%;
+  right: 7%;
+  top: 8%;
+  bottom: 6%;
+  background: #fbf6ea;
+  border-radius: 6px;
+  z-index: 2;
+  transition: transform 0.9s cubic-bezier(.3,.1,.2,1) 0.55s;
+  box-shadow: 0 2px 6px rgba(0,0,0,.15);
+}
+.phase-opening .envelope .env-flap { transform: rotateX(180deg); z-index: 1; }
+.phase-opening .envelope .env-seal { opacity: 0; transform: scale(1.4); }
+.phase-opening .envelope .env-letter { transform: translateY(-70%); }
+
+.classic-letter {
+  background:
+    radial-gradient(circle at 15% 10%, rgba(214, 169, 74, 0.08), transparent 40%),
+    repeating-linear-gradient(0deg, rgba(120, 90, 40, 0.025) 0 2px, transparent 2px 4px),
+    #fbf5e6;
+  color: #3a2414;
+  border-radius: 14px;
+  padding: 14px;
+  position: relative;
+  box-shadow: 0 30px 60px rgba(0,0,0,.35);
+}
+.classic-letter::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  padding: 12px;
+  background: repeating-linear-gradient(45deg, #c62828 0 12px, #fffdf6 12px 24px, #1e6b45 24px 36px, #fffdf6 36px 48px);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+.classic-letter .inner {
+  border: 1.5px solid rgba(160, 120, 60, 0.35);
+  border-radius: 6px;
+  margin: 6px;
+  padding: clamp(20px, 5vw, 40px) clamp(16px, 5vw, 36px);
+}
+
+/* ==========================================================================
+   Theme B — Mystery Present
+   ========================================================================== */
+.theme-present {
+  background:
+    radial-gradient(circle at 50% 35%, rgba(255, 214, 140, 0.22), transparent 45%),
+    radial-gradient(circle at 80% 90%, rgba(205, 47, 47, 0.25), transparent 50%),
+    linear-gradient(160deg, #0f3a2a, #0a2219 70%);
+}
+.sparkles i {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #ffe6a8;
+  box-shadow: 0 0 8px 2px rgba(255, 220, 140, 0.8);
+  animation: twinkle var(--d, 3s) ease-in-out var(--delay, 0s) infinite;
+  left: var(--x);
+  top: var(--y);
+}
+@keyframes twinkle {
+  0%, 100% { opacity: 0.1; transform: scale(0.6); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+.present {
+  width: min(250px, 66vw);
+  height: min(230px, 60vw);
+  position: relative;
+  filter: drop-shadow(0 26px 30px rgba(0,0,0,.45));
+}
+.present .box {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  bottom: 0;
+  height: 72%;
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255,255,255,.15) 0 2px, transparent 3px) 0 0 / 22px 22px,
+    linear-gradient(135deg, #d63a3a, #9c1c1c);
+  transition: transform 0.6s ease 0.6s, opacity 0.6s ease 0.6s;
+}
+.present .lid {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 68%;
+  height: 22%;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #e04848, #a51f1f);
+  box-shadow: 0 6px 10px rgba(0,0,0,.25);
+  transition: transform 0.75s cubic-bezier(.3,.2,.2,1) 0.35s;
+  z-index: 3;
+}
+.present .ribbon-v {
+  position: absolute;
+  left: 50%;
+  width: 34px;
+  margin-left: -17px;
+  top: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, #c8962e, #f4d27a 50%, #c8962e);
+}
+.present .ribbon-h {
+  position: absolute;
+  top: 40%;
+  height: 30px;
+  left: 0;
+  right: 0;
+  background: linear-gradient(#c8962e, #f4d27a 50%, #c8962e);
+}
+.present .bow {
+  position: absolute;
+  left: 50%;
+  bottom: 86%;
+  width: 130px;
+  margin-left: -65px;
+  z-index: 4;
+  transition: transform 0.5s ease, opacity 0.4s ease 0.15s;
+  transform-origin: 50% 80%;
+}
+.phase-opening .present .bow { transform: translateY(-30px) rotate(-25deg) scale(0.4); opacity: 0; }
+.phase-opening .present .lid { transform: translate(60%, -160%) rotate(28deg); }
+.phase-opening .present .box { transform: translateY(14px) scale(0.96); opacity: 0.0; }
+.present-glow {
+  position: absolute;
+  inset: -40px;
+  background: radial-gradient(circle, rgba(255,226,150,.0), transparent 60%);
+  transition: background 0.8s ease 0.5s;
+  pointer-events: none;
+}
+.phase-opening .present-glow { background: radial-gradient(circle, rgba(255,226,150,.65), transparent 60%); }
+
+.present-card {
+  background: linear-gradient(170deg, #fffaf0, #f7ecd4);
+  color: #4a1010;
+  border-radius: 18px;
+  box-shadow: 0 30px 70px rgba(0,0,0,.45), 0 0 0 6px rgba(244, 210, 122, 0.55);
+  position: relative;
+  overflow: hidden;
+}
+.present-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 26px;
+  margin-left: -13px;
+  height: 100%;
+  background: linear-gradient(90deg, #c8962e, #f4d27a 50%, #c8962e);
+  opacity: 0.18;
+}
+
+/* ==========================================================================
+   Theme C — Advent Calendar
+   ========================================================================== */
+.theme-advent {
+  background:
+    radial-gradient(circle at 80% 10%, rgba(255, 250, 220, 0.22), transparent 18%),
+    linear-gradient(#0d1730 0%, #1c2f52 55%, #2f4a70 100%);
+}
+.advent-board {
+  width: min(560px, 94vw);
+  border-radius: 18px;
+  padding: clamp(10px, 3vw, 18px);
+  background:
+    linear-gradient(rgba(10, 20, 40, 0.15), rgba(10, 20, 40, 0.15)),
+    linear-gradient(#7b2d1d, #5a1e12);
+  box-shadow: 0 30px 60px rgba(0,0,0,.45), inset 0 0 0 3px rgba(243, 217, 164, 0.5);
+}
+.advent-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: clamp(5px, 1.6vw, 10px);
+}
+.advent-door {
+  aspect-ratio: 1 / 1.15;
+  border-radius: 8px;
+  position: relative;
+  transform-style: preserve-3d;
+  background: #f3d9a4;
+}
+.advent-door .door-inside {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background: radial-gradient(circle, #ffe9a8, #e8a94a 70%);
+  box-shadow: inset 0 0 18px rgba(120, 60, 0, 0.6);
+}
+.advent-door .door-face {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Mountains of Christmas', Georgia, serif;
+  font-weight: 700;
+  font-size: clamp(14px, 4vw, 24px);
+  color: #5a1e12;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255,255,255,.45), transparent 40%),
+    var(--door, #f1d49a);
+  border: 2px solid rgba(90, 30, 18, 0.25);
+  transform-origin: left center;
+  transition: transform 0.9s cubic-bezier(.3,.1,.2,1);
+  backface-visibility: hidden;
+}
+.advent-door.is-target .door-face {
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255,255,255,.6), transparent 40%),
+    linear-gradient(135deg, #e8b04a, #c98a22);
+  color: #3a1206;
+  box-shadow: 0 0 0 3px #fff4cf, 0 0 24px 6px rgba(255, 220, 140, 0.8);
+  animation: door-glow 2s ease-in-out infinite;
+}
+@keyframes door-glow {
+  0%, 100% { box-shadow: 0 0 0 3px #fff4cf, 0 0 14px 2px rgba(255, 220, 140, 0.6); }
+  50% { box-shadow: 0 0 0 3px #fff4cf, 0 0 30px 10px rgba(255, 220, 140, 0.95); }
+}
+.phase-opening .advent-door.is-target .door-face { transform: rotateY(-115deg); animation: none; }
+.village {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 32vh;
+  z-index: 0;
+  pointer-events: none;
+}
+.advent-card {
+  background: #fdf7ea;
+  color: #2b1a10;
+  border-radius: 18px;
+  box-shadow: 0 30px 60px rgba(0,0,0,.45), 0 0 0 5px #e8b04a;
+}
+
+/* ==========================================================================
+   Theme D — Elegant Christmas
+   ========================================================================== */
+.theme-elegant {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(227, 196, 119, 0.14), transparent 55%),
+    linear-gradient(170deg, #12352a, #08201a 70%);
+  color: #f6efdc;
+}
+.elegant-invite {
+  width: min(300px, 78vw);
+  aspect-ratio: 0.72;
+  position: relative;
+  transform-style: preserve-3d;
+  filter: drop-shadow(0 25px 35px rgba(0,0,0,.5));
+}
+.elegant-invite .half {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  background: linear-gradient(160deg, #fbf6e8, #efe4c8);
+}
+.elegant-invite .cover {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  background: linear-gradient(160deg, #1a4a3a, #0e2c23);
+  border: 1px solid rgba(227, 196, 119, 0.6);
+  box-shadow: inset 0 0 0 8px #0e2c23, inset 0 0 0 9px rgba(227, 196, 119, 0.7);
+  transform-origin: left center;
+  transition: transform 1.1s cubic-bezier(.35,.1,.15,1);
+  backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  z-index: 2;
+}
+.phase-opening .elegant-invite .cover { transform: rotateY(-160deg); }
+.gold-text {
+  background: linear-gradient(100deg, #b98b2e, #f3dc9a 45%, #c49a3c 60%, #f6e3a8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.elegant-card {
+  background: linear-gradient(165deg, #fdf9ee, #f1e7cf);
+  color: #14382c;
+  border-radius: 8px;
+  box-shadow: 0 30px 70px rgba(0,0,0,.5);
+  position: relative;
+}
+.elegant-card::before {
+  content: '';
+  position: absolute;
+  inset: 12px;
+  border: 1px solid rgba(185, 139, 46, 0.65);
+  border-radius: 4px;
+  pointer-events: none;
+}
+.elegant-card::after {
+  content: '';
+  position: absolute;
+  inset: 17px;
+  border: 1px solid rgba(185, 139, 46, 0.3);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* Long-name handling: text sizes adapt via data-len set in JS */
+.recipient-name[data-len='long'] { font-size: clamp(1.9rem, 7vw, 3rem) !important; }
+.recipient-name[data-len='xlong'] { font-size: clamp(1.5rem, 5.5vw, 2.3rem) !important; }
