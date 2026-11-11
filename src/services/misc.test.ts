@@ -150,6 +150,6 @@ describe('public link address', () => {
     for (const u of ['http://localhost:5173/', 'http://127.0.0.1:4173/x/', 'http://192.168.1.20:5173/', 'file:///C:/x/index.html', 'http://app.localhost/']) {
       expect(isLocalOnlyUrl(u)).toBe(true);
     }
-    expect(isLocalOnlyUrl('https://adlspurs.github.io/ssanta/')).toBe(false);
+    expect(isLocalOnlyUrl('https://alastairgab.github.io/ssanta/')).toBe(false);
   });
 });
