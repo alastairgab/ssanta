@@ -88,6 +88,22 @@ describe('repair solver', () => {
     expect(res.repair.unchanged).toHaveLength(6);
   });
 
+  it('needs two changes when the leaver was in a two-person swap', () => {
+    const previous = [
+      { giverId: 'A', recipientId: 'B' },
+      { giverId: 'B', recipientId: 'A' },
+      { giverId: 'C', recipientId: 'D' },
+      { giverId: 'D', recipientId: 'E' },
+      { giverId: 'E', recipientId: 'C' },
+    ];
+    const res = planWithdrawalRepair(makeInput(['A', 'B', 'C', 'D', 'E']), previous, ['A']);
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    // B has neither giver nor recipient left: B must join the other cycle (2 changes, proven minimal).
+    expect(res.repair.changed).toHaveLength(2);
+    expect(res.repair.solver.provenOptimal).toBe(true);
+  });
+
   it('makes more changes when constraints require it, and validates them', () => {
     const ppl = ['A', 'B', 'C', 'D', 'E'];
     const previous = [

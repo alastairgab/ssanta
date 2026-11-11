@@ -179,12 +179,14 @@ describe('withdrawal repair', () => {
   it('repairs with minimal changes and creates a new version, keeping unchanged links', async () => {
     const { event, draw } = await confirmedEvent();
     await issueLinks(event.id, draw.id, 'all', 'initial');
-    const leaving = draw.snapshot.assignments[0]!.giverId;
+    // Pick someone who is NOT in a two-person swap (with 5 people at least one such person exists).
+    const rec = new Map(draw.snapshot.assignments.map((a) => [a.giverId, a.recipientId]));
+    const leaving = draw.snapshot.assignments.find((a) => rec.get(a.recipientId) !== a.giverId)!.giverId;
     const { result } = await planWithdrawal(event.id, [leaving]);
     const r = result as RepairResult;
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    // Withdrawing one person from a cycle needs exactly one change: their giver takes their recipient.
+    // Withdrawing one person from a cycle of 3+ needs exactly one change: their giver takes their recipient.
     expect(r.repair.changed).toHaveLength(1);
     expect(r.repair.solver.provenOptimal).toBe(true);
     const v2 = await applyWithdrawalRepair(event.id, r.repair, 'Flu');

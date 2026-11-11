@@ -41,17 +41,19 @@ async function openReveal(browser: Browser, link: string) {
 test('withdrawal creates a minimal repair as a new version with replacement links', async ({ page, browser }) => {
   await setupConfirmedWithLinks(page);
   const before = await linkMap(page);
-  // Determine Simba's giver from the links themselves
+  // Learn the assignments from the links themselves
   const assignments = new Map<string, string>();
   for (const [name, link] of before) {
     const { ctx, recipient } = await openReveal(browser, link);
     assignments.set(name, recipient);
     await ctx.close();
   }
-  const giverOfSimba = [...assignments].find(([, r]) => r === 'Simba')![0];
+  // Withdraw someone who isn't in a two-person swap, so exactly one change is the proven minimum.
+  const leaver = [...assignments.keys()].find((n) => assignments.get(assignments.get(n)!) !== n)!;
+  const giverOfLeaver = [...assignments].find(([, r]) => r === leaver)![0];
 
   await page.getByRole('link', { name: 'Withdrawals' }).click();
-  await page.getByRole('checkbox', { name: 'Simba' }).check();
+  await page.getByRole('checkbox', { name: leaver }).check();
   await page.getByRole('button', { name: 'Find the smallest change' }).click();
   await expect(page.getByRole('heading', { name: 'Proposed repair: 1 assignment change' })).toBeVisible();
   await expect(page.getByText('This is proven to be the fewest changes possible')).toBeVisible();
@@ -66,9 +68,8 @@ test('withdrawal creates a minimal repair as a new version with replacement link
   await expect(page.getByText('Replacement')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Preview' })).toHaveCount(4);
   const after = await linkMap(page);
-  expect([...after.keys()].sort(), `giver of Simba: ${giverOfSimba}`).toContain(giverOfSimba);
-  const { ctx, p, recipient } = await openReveal(browser, after.get(giverOfSimba)!);
-  expect(recipient).toBe(assignments.get('Simba'));
+  const { ctx, p, recipient } = await openReveal(browser, after.get(giverOfLeaver)!);
+  expect(recipient).toBe(assignments.get(leaver));
   await expect(p.getByText(/Draw Version 2/)).toBeVisible();
   await ctx.close();
 
