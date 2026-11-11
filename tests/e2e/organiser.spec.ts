@@ -54,7 +54,7 @@ test('organiser creates, draws, confirms and distributes; links open in a fresh 
     const u = new URL(l);
     expect(u.pathname).toBe('/secret-santa/');
     expect(u.search).toBe('');
-    expect(u.hash).toMatch(/^#r=1\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]{43}$/);
+    expect(u.hash).toMatch(/^#r=2\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]{43}$/);
   }
   await page.getByRole('checkbox', { name: 'Shared' }).first().click();
   await expect(page.getByText('1 of 6 marked as shared')).toBeVisible();

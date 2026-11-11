@@ -142,6 +142,61 @@ export async function generateRelayKeyPair(): Promise<{ publicKeyJwk: JsonWebKey
   return { publicKeyJwk: minimalPublicJwk(publicKeyJwk), privateKeyJwk };
 }
 
+// P-256 point compression: a public key is stored as 33 bytes (sign byte + x) instead of a JWK
+// with both coordinates, which keeps participant links short. y is recovered from the curve
+// equation y² = x³ − 3x + b (mod p); p ≡ 3 (mod 4), so √a = a^((p+1)/4).
+const P256_P = 0xffffffff00000001000000000000000000000000ffffffffffffffffffffffffn;
+const P256_B = 0x5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604bn;
+
+function modPow(base: bigint, exp: bigint, mod: bigint): bigint {
+  let result = 1n;
+  let b = base % mod;
+  let e = exp;
+  while (e > 0n) {
+    if (e & 1n) result = (result * b) % mod;
+    b = (b * b) % mod;
+    e >>= 1n;
+  }
+  return result;
+}
+const bytesToBigInt = (bytes: Uint8Array) => BigInt(`0x${bytesToHex(bytes) || '0'}`);
+function bigIntToBytes32(n: bigint): Uint8Array {
+  const hex = n.toString(16).padStart(64, '0');
+  const out = new Uint8Array(32);
+  for (let i = 0; i < 32; i++) out[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+  return out;
+}
+
+/** Compress a P-256 public JWK to a 44-character base64url string. */
+export function compressPublicJwk(jwk: JsonWebKey): string {
+  if (jwk.kty !== 'EC' || jwk.crv !== 'P-256' || !jwk.x || !jwk.y) throw new CryptoError('malformed', 'Not a P-256 public key.');
+  const x = base64UrlToBytes(jwk.x);
+  const y = base64UrlToBytes(jwk.y);
+  if (x.length !== 32 || y.length !== 32) throw new CryptoError('malformed', 'Invalid P-256 public key.');
+  const out = new Uint8Array(33);
+  out[0] = 0x02 | (y[31]! & 1);
+  out.set(x, 1);
+  return bytesToBase64Url(out);
+}
+
+/** Recover the full P-256 public JWK from its compressed form (validates the point is on the curve). */
+export function decompressPublicJwk(compressed: string): JsonWebKey {
+  let bytes: Uint8Array;
+  try {
+    bytes = base64UrlToBytes(compressed);
+  } catch {
+    throw new CryptoError('malformed', 'Invalid organiser key.');
+  }
+  if (bytes.length !== 33 || (bytes[0] !== 0x02 && bytes[0] !== 0x03)) throw new CryptoError('malformed', 'Invalid organiser key.');
+  const x = bytesToBigInt(bytes.subarray(1));
+  if (x >= P256_P) throw new CryptoError('malformed', 'Invalid organiser key.');
+  const rhs = (((modPow(x, 3n, P256_P) - 3n * x + P256_B) % P256_P) + P256_P) % P256_P;
+  let y = modPow(rhs, (P256_P + 1n) / 4n, P256_P);
+  if ((y * y) % P256_P !== rhs) throw new CryptoError('malformed', 'Invalid organiser key.');
+  if (Number(y & 1n) !== (bytes[0]! & 1)) y = P256_P - y;
+  return { kty: 'EC', crv: 'P-256', x: bytesToBase64Url(bigIntToBytes32(x)), y: bytesToBase64Url(bigIntToBytes32(y)) };
+}
+
 /** Keep only the fields needed to import a P-256 public key (keeps links short). */
 export function minimalPublicJwk(jwk: JsonWebKey): JsonWebKey {
   return { kty: jwk.kty, crv: jwk.crv, x: jwk.x, y: jwk.y };

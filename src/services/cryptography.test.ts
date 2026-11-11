@@ -180,7 +180,7 @@ describe('reveal links', () => {
       links.push(await createRevealLink(payload, 'https://user.github.io/secret-santa/'));
     }
     const first = links[0]!;
-    expect(first.startsWith('https://user.github.io/secret-santa/#r=1.')).toBe(true);
+    expect(first.startsWith('https://user.github.io/secret-santa/#r=2.')).toBe(true);
     // Nothing sensitive in the path or query (everything after # stays in the browser)
     const u = new URL(first);
     expect(u.search).toBe('');
@@ -231,5 +231,40 @@ describe('reveal links', () => {
 
   it('computes the app base URL without query or fragment', () => {
     expect(appBaseUrl('https://u.github.io/secret-santa/?x=1#/events')).toBe('https://u.github.io/secret-santa/');
+  });
+});
+
+describe('compact links (format 2)', () => {
+  it('compresses and restores P-256 public keys exactly', async () => {
+    const { compressPublicJwk, decompressPublicJwk } = await import('./cryptography');
+    for (let i = 0; i < 20; i++) {
+      const { publicKeyJwk, privateKeyJwk } = await generateRelayKeyPair();
+      const c = compressPublicJwk(publicKeyJwk);
+      expect(c).toHaveLength(44);
+      const restored = decompressPublicJwk(c);
+      expect(restored.x).toBe(publicKeyJwk.x);
+      expect(restored.y).toBe(publicKeyJwk.y);
+      // The restored key really works for encryption to the organiser
+      const packet = await encryptToPublicKey(restored, { ok: i });
+      expect(await decryptWithPrivateKey(privateKeyJwk, packet)).toEqual({ ok: i });
+    }
+    expect(() => decompressPublicJwk('A'.repeat(44))).toThrow();
+  });
+
+  it('is much shorter than format 1 and decodes to the same information', async () => {
+    const { people, event, draw } = fixtureDraw();
+    const keys = await generateRelayKeyPair();
+    const ev = { ...event, relayKeys: { ...keys, createdAt: '' } };
+    const v2 = buildRevealPayload({ event: ev, draw, giverId: 'p_Simba', participants: people, issueNumber: 1 });
+    expect(v2.v).toBe(2);
+    const v1 = { ...v2, v: 1 as const, eid: ev.id + 'x'.repeat(24), gid: 'p_' + 'y'.repeat(24), at: new Date().toISOString() };
+    const short = await createRevealLink(v2, 'https://alastairgab.github.io/ssanta/');
+    const long = await createRevealLink(v1, 'https://alastairgab.github.io/ssanta/');
+    expect(short).toMatch(/#r=2\./);
+    expect(short.length).toBeLessThan(long.length - 120);
+    const opened = await openRevealUrl(short);
+    expect(opened).toMatchObject({ v: 2, g: 'Simba', r: 'Nala', dv: 2, gi: draw.snapshot.participants.findIndex((p) => p.id === 'p_Simba') });
+    expect(opened.rk?.x).toBe(keys.publicKeyJwk.x);
+    expect(opened.eid).toBeUndefined();
   });
 });

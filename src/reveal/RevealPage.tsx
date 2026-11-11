@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { RevealPayload } from '../types/reveal';
+import { giverStorageKey, type RevealPayload } from '../types/reveal';
 import { getTheme } from '../themes';
 import { formatDate, formatMoney } from '../utils/format';
 import { renderCardImage } from './cardExport';
@@ -193,7 +193,7 @@ export default function RevealPage({ payload }: { payload: RevealPayload }) {
 
             {payload.wl ? <WishlistView wl={payload.wl} recipient={payload.r} /> : null}
             {payload.rk ? <AskQuestion payload={payload} /> : null}
-            <GiftChecklist storageKey={`ss:check:${payload.did}:${payload.gid}`} />
+            <GiftChecklist storageKey={`ss:check:${giverStorageKey(payload)}`} />
 
             <footer className="space-y-1 text-center text-xs opacity-80">
               <p>

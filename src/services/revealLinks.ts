@@ -8,8 +8,7 @@ import type {
   PublicWishlist,
 } from '../types/models';
 import type { AnswerLinkPayload, QuestionLinkPayload, RevealPayload, WishlistRequestPayload } from '../types/reveal';
-import { CryptoError, openSealedJson, sealJson } from './cryptography';
-import { nowIso } from '../utils/id';
+import { compressPublicJwk, CryptoError, decompressPublicJwk, openSealedJson, sealJson } from './cryptography';
 
 /**
  * Self-contained participant links.
@@ -23,7 +22,12 @@ import { nowIso } from '../utils/id';
  */
 
 export type LinkKind = 'r' | 'q' | 'a' | 'w';
-export const LINK_FORMAT_VERSION = 1;
+/**
+ * Highest link format this build can read. Reveal links: 1 = original JSON payload,
+ * 2 = compact payload (no event ID/timestamp, giver index, compressed organiser key).
+ * Older formats must stay readable forever because links can't be recalled once sent.
+ */
+export const LINK_FORMAT_VERSION = 2;
 
 const KIND_AAD: Record<LinkKind, string> = { r: 'reveal', q: 'question', a: 'answer', w: 'wishlist-request' };
 
@@ -117,9 +121,9 @@ export function linkNeedsRecreating(link: string | undefined): boolean {
   return !link.startsWith(publicBaseUrl());
 }
 
-async function makeLink(kind: LinkKind, payload: unknown, baseUrl: string): Promise<string> {
+async function makeLink(kind: LinkKind, payload: unknown, baseUrl: string, version = 1): Promise<string> {
   const sealed = await sealJson(KIND_AAD[kind], payload);
-  return `${baseUrl}#${kind}=${LINK_FORMAT_VERSION}.${sealed.ciphertext}.${sealed.key}`;
+  return `${baseUrl}#${kind}=${version}.${sealed.ciphertext}.${sealed.key}`;
 }
 
 async function openLink<T>(fragment: ParsedFragment, expected: LinkKind, schema: z.ZodType<T>): Promise<T> {
@@ -161,13 +165,10 @@ export const publicWishlistSchema = z.object({
   links: z.array(str(2000)).max(20).default([]),
 });
 
-export const revealPayloadSchema: z.ZodType<RevealPayload> = z.object({
-  v: z.literal(1),
-  eid: str(80),
+const revealCommon = {
   did: str(80),
   dv: z.number().int().min(1).max(100000),
   iss: z.number().int().min(1).max(100000),
-  gid: str(80),
   g: str(200),
   gc: str(200).optional(),
   r: str(200),
@@ -182,8 +183,48 @@ export const revealPayloadSchema: z.ZodType<RevealPayload> = z.object({
   ins: str(2000).optional(),
   desc: str(2000).optional(),
   wl: publicWishlistSchema.optional(),
+};
+
+/** Format 1 reveal payload (original). */
+export const revealPayloadSchema: z.ZodType<RevealPayload> = z.object({
+  ...revealCommon,
+  v: z.literal(1),
+  eid: str(80),
+  gid: str(80),
   rk: jwkSchema.optional(),
   at: str(40),
+}) as unknown as z.ZodType<RevealPayload>;
+
+/** Format 2 (compact) reveal payload as stored inside the link. */
+const revealWireV2Schema = z.object({
+  ...revealCommon,
+  v: z.literal(2),
+  gi: z.number().int().min(0).max(10000),
+  /** Compressed organiser relay key. */
+  k: str(60).optional(),
+});
+
+function toWireV2(p: RevealPayload) {
+  if (p.gi === undefined) throw new Error('Compact links need the giver index.');
+  const { eid: _e, gid: _g, at: _a, rk, ...rest } = p;
+  void _e;
+  void _g;
+  void _a;
+  return { ...rest, v: 2 as const, gi: p.gi, k: rk ? compressPublicJwk(rk) : undefined };
+}
+
+const revealV2Schema: z.ZodType<RevealPayload> = revealWireV2Schema.transform((w, ctx) => {
+  const { k, ...rest } = w;
+  let rk: JsonWebKey | undefined;
+  if (k) {
+    try {
+      rk = decompressPublicJwk(k);
+    } catch {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'bad key' });
+      return z.NEVER;
+    }
+  }
+  return { ...rest, rk } as RevealPayload;
 }) as unknown as z.ZodType<RevealPayload>;
 
 const questionPayloadSchema: z.ZodType<QuestionLinkPayload> = z.object({
@@ -262,13 +303,13 @@ export function buildRevealPayload(input: RevealBuildInput): RevealPayload {
   const recipient = snapPerson(assignment.recipientId);
   if (!giver || !recipient) throw new Error('Draw snapshot is missing participant details.');
   const codename = event.codenamesEnabled ? (giver.codename ?? event.codenames[giverId]) : undefined;
+  const gi = draw.snapshot.participants.findIndex((p) => p.id === giverId);
   return {
-    v: 1,
-    eid: event.id,
+    v: 2,
     did: draw.id,
     dv: draw.version,
     iss: input.issueNumber,
-    gid: giverId,
+    gi,
     g: giver.displayName,
     gc: codename || undefined,
     r: recipient.displayName,
@@ -284,16 +325,16 @@ export function buildRevealPayload(input: RevealBuildInput): RevealPayload {
     desc: event.description?.trim() || undefined,
     wl: event.includeWishlists ? toPublicWishlist(input.recipientWishlist) : undefined,
     rk: event.relayKeys?.publicKeyJwk,
-    at: nowIso(),
   };
 }
 
-export const createRevealLink = (payload: RevealPayload, baseUrl = publicBaseUrl()) => makeLink('r', payload, baseUrl);
+export const createRevealLink = (payload: RevealPayload, baseUrl = publicBaseUrl()) =>
+  payload.v === 2 ? makeLink('r', toWireV2(payload), baseUrl, 2) : makeLink('r', payload, baseUrl, 1);
 export const createQuestionLink = (payload: QuestionLinkPayload, baseUrl = publicBaseUrl()) => makeLink('q', payload, baseUrl);
 export const createAnswerLink = (payload: AnswerLinkPayload, baseUrl = publicBaseUrl()) => makeLink('a', payload, baseUrl);
 export const createWishlistRequestLink = (payload: WishlistRequestPayload, baseUrl = publicBaseUrl()) => makeLink('w', payload, baseUrl);
 
-export const openRevealLink = (f: ParsedFragment) => openLink(f, 'r', revealPayloadSchema);
+export const openRevealLink = (f: ParsedFragment) => openLink(f, 'r', f.version >= 2 ? revealV2Schema : revealPayloadSchema);
 export const openQuestionLink = (f: ParsedFragment) => openLink(f, 'q', questionPayloadSchema);
 export const openAnswerLink = (f: ParsedFragment) => openLink(f, 'a', answerPayloadSchema);
 export const openWishlistRequestLink = (f: ParsedFragment) => openLink(f, 'w', wishlistRequestSchema);

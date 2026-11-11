@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { AnswerLinkPayload, QuestionLinkPayload, RevealPayload } from '../types/reveal';
+import { giverStorageKey, type AnswerLinkPayload, type QuestionLinkPayload, type RevealPayload } from '../types/reveal';
 import { createQuestionPacket, createReplyPacket, MAX_QUESTION_LENGTH, MAX_REPLY_LENGTH } from '../services/anonymousQuestions';
 import { CopyButton } from '../components/ui/ui';
 import { loadLocal, saveLocal } from '../utils/localStore';
@@ -32,7 +32,7 @@ function PacketResult({ packet, recipientLabel, filename }: { packet: string; re
 
 /** On the reveal page: giver asks their recipient a question via the organiser. */
 export function AskQuestion({ payload }: { payload: RevealPayload }) {
-  const key = `ss:questions:${payload.did}:${payload.gid}`;
+  const key = `ss:questions:${giverStorageKey(payload)}`;
   const [text, setText] = useState('');
   const [packet, setPacket] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

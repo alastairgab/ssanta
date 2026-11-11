@@ -31,7 +31,7 @@ export async function createQuestionPacket(reveal: RevealPayload, text: string):
   if (trimmed.length > MAX_QUESTION_LENGTH) throw new Error(`Questions can be at most ${MAX_QUESTION_LENGTH} characters.`);
   if (!reveal.rk) throw new Error('This link does not support anonymous questions. Ask your organiser for an updated link.');
   const qid = newId('q');
-  const packet: RelayPacket = { t: 'question', v: 1, eid: reveal.eid, did: reveal.did, gid: reveal.gid, qid, text: trimmed, at: nowIso() };
+  const packet: RelayPacket = { t: 'question', v: 1, eid: reveal.eid, did: reveal.did, gid: reveal.gid, gi: reveal.gi, qid, text: trimmed, at: nowIso() };
   return { packet: await encryptToPublicKey(reveal.rk, packet), qid };
 }
 
@@ -45,7 +45,18 @@ export async function createReplyPacket(question: QuestionLinkPayload, text: str
 
 const id = z.string().min(1).max(100);
 const packetSchema = z.discriminatedUnion('t', [
-  z.object({ t: z.literal('question'), v: z.literal(1), eid: id, did: id, gid: id, qid: id, text: z.string().min(1).max(MAX_QUESTION_LENGTH), at: z.string().max(40) }),
+  // gid (format 1 links) or gi (compact links) identifies the giver; questionFromPacket rejects neither.
+  z.object({
+    t: z.literal('question'),
+    v: z.literal(1),
+    eid: id.optional(),
+    did: id,
+    gid: id.optional(),
+    gi: z.number().int().min(0).max(10000).optional(),
+    qid: id,
+    text: z.string().min(1).max(MAX_QUESTION_LENGTH),
+    at: z.string().max(40),
+  }),
   z.object({ t: z.literal('reply'), v: z.literal(1), qid: id, text: z.string().min(1).max(MAX_REPLY_LENGTH), at: z.string().max(40) }),
   z.object({ t: z.literal('wishlist'), v: z.literal(1), eid: id, pid: id, name: z.string().max(200), wishlist: publicWishlistSchema, at: z.string().max(40) }),
 ]);
@@ -69,7 +80,7 @@ export async function openRelayPacket(event: ExchangeEvent, pasted: string): Pro
   const parsed = packetSchema.safeParse(raw);
   if (!parsed.success) throw new RelayError('The message opened, but its contents are not valid.');
   const packet = parsed.data as RelayPacket;
-  if ((packet.t === 'question' || packet.t === 'wishlist') && packet.eid !== event.id) {
+  if ((packet.t === 'question' || packet.t === 'wishlist') && packet.eid !== undefined && packet.eid !== event.id) {
     throw new RelayError('This message belongs to a different event.');
   }
   return packet;
@@ -83,14 +94,16 @@ export function questionFromPacket(
 ): AnonymousQuestion {
   const draw = draws.find((d) => d.id === packet.did && d.eventId === event.id);
   if (!draw) throw new RelayError('This question refers to a draw that is not in this workspace.');
-  const assignment = draw.snapshot.assignments.find((a) => a.giverId === packet.gid);
-  if (!assignment) throw new RelayError('This question came from someone who is not in that draw.');
+  // Compact (v2) links identify the giver by position in the frozen snapshot.
+  const giverId = packet.gid ?? (packet.gi !== undefined ? draw.snapshot.participants[packet.gi]?.id : undefined);
+  const assignment = draw.snapshot.assignments.find((a) => a.giverId === giverId);
+  if (!assignment || !giverId) throw new RelayError('This question came from someone who is not in that draw.');
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
     id: packet.qid,
     eventId: event.id,
     drawId: draw.id,
-    giverId: packet.gid,
+    giverId,
     recipientId: assignment.recipientId,
     text: packet.text,
     askedAt: packet.at,
