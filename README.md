@@ -111,6 +111,10 @@ You don't need to know how to program for this, only how to use the GitHub websi
 
 Every time you push changes to `main`, the site is tested and redeployed automatically.
 
+**Where links point:** participant links always use your published address, set by `VITE_PUBLIC_URL`. The deploy
+workflow sets it to `https://<owner>.github.io/<repo>/` automatically, and the `.env` file sets it for `npm run dev`, so
+links made while running the app locally still open on everyone's phones. If you rename the repository, update `.env`.
+
 **Base path:** the build uses relative paths (`base: './'`) and hash-based routing, so it works under any repository name
 with no extra configuration. To force an absolute base, set the `BASE_PATH` environment variable at build time, e.g.
 `BASE_PATH=/secret-santa/ npm run build`.
@@ -403,6 +407,7 @@ don't depend on the organiser database; display names are never used as keys.
 
 | Problem | What to do |
 | --- | --- |
+| Links or QR codes point to `localhost` | Links use the address in `VITE_PUBLIC_URL` (the `.env` file, and set automatically by the deploy workflow). Make sure it's your published site, then open **Share links** and press **Recreate links**. Assignments don't change; resend the new links. |
 | A link "could not be opened" | Chat apps sometimes cut long links. Resend it, use the QR code, or create a fresh link on Share links (same assignment, new link). |
 | My exchanges disappeared | You may be in another browser, a private window, or your browser cleared site data. Restore a backup. |
 | "No valid draw is possible" | Read the explanation and use one of the tested fixes. Small groups with many rules are the usual cause; two people can never avoid a direct swap. |

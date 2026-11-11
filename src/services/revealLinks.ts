@@ -73,6 +73,50 @@ export function appBaseUrl(href = typeof location !== 'undefined' ? location.hre
   return u.toString();
 }
 
+/**
+ * The address participant links point to. Links must open the PUBLIC site (GitHub Pages), even when
+ * the organiser runs the app on their own computer — a localhost link only works on that computer.
+ * Set VITE_PUBLIC_URL (in .env, or by the deploy workflow) to the published address.
+ */
+export function publicBaseUrl(): string {
+  const configured = (import.meta.env?.VITE_PUBLIC_URL as string | undefined)?.trim();
+  if (configured) {
+    try {
+      return appBaseUrl(configured.endsWith('/') ? configured : `${configured}/`);
+    } catch {
+      /* fall through to the current page */
+    }
+  }
+  return appBaseUrl();
+}
+
+/** True for addresses only reachable on the organiser's own computer or network. */
+export function isLocalOnlyUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    if (u.protocol === 'file:') return true;
+    const h = u.hostname.toLowerCase();
+    return (
+      h === 'localhost' ||
+      h.endsWith('.localhost') ||
+      h === '[::1]' ||
+      h === '0.0.0.0' ||
+      /^127\./.test(h) ||
+      /^10\./.test(h) ||
+      /^192\.168\./.test(h) ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(h)
+    );
+  } catch {
+    return true;
+  }
+}
+
+/** Does an existing link point somewhere other than the current public address? */
+export function linkNeedsRecreating(link: string | undefined): boolean {
+  if (!link) return false;
+  return !link.startsWith(publicBaseUrl());
+}
+
 async function makeLink(kind: LinkKind, payload: unknown, baseUrl: string): Promise<string> {
   const sealed = await sealJson(KIND_AAD[kind], payload);
   return `${baseUrl}#${kind}=${LINK_FORMAT_VERSION}.${sealed.ciphertext}.${sealed.key}`;
@@ -244,10 +288,10 @@ export function buildRevealPayload(input: RevealBuildInput): RevealPayload {
   };
 }
 
-export const createRevealLink = (payload: RevealPayload, baseUrl = appBaseUrl()) => makeLink('r', payload, baseUrl);
-export const createQuestionLink = (payload: QuestionLinkPayload, baseUrl = appBaseUrl()) => makeLink('q', payload, baseUrl);
-export const createAnswerLink = (payload: AnswerLinkPayload, baseUrl = appBaseUrl()) => makeLink('a', payload, baseUrl);
-export const createWishlistRequestLink = (payload: WishlistRequestPayload, baseUrl = appBaseUrl()) => makeLink('w', payload, baseUrl);
+export const createRevealLink = (payload: RevealPayload, baseUrl = publicBaseUrl()) => makeLink('r', payload, baseUrl);
+export const createQuestionLink = (payload: QuestionLinkPayload, baseUrl = publicBaseUrl()) => makeLink('q', payload, baseUrl);
+export const createAnswerLink = (payload: AnswerLinkPayload, baseUrl = publicBaseUrl()) => makeLink('a', payload, baseUrl);
+export const createWishlistRequestLink = (payload: WishlistRequestPayload, baseUrl = publicBaseUrl()) => makeLink('w', payload, baseUrl);
 
 export const openRevealLink = (f: ParsedFragment) => openLink(f, 'r', revealPayloadSchema);
 export const openQuestionLink = (f: ParsedFragment) => openLink(f, 'q', questionPayloadSchema);

@@ -55,6 +55,9 @@ jobs:
       - run: npm ci
       # Relative base ('./') works for any repository name; hash routing needs no 404 fallback.
       - run: npm run build
+        env:
+          # Participant links always point at this repository's published Pages site.
+          VITE_PUBLIC_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

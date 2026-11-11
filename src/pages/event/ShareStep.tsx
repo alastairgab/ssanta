@@ -9,6 +9,7 @@ import { issueLinks, setShared } from '../../services/eventOps';
 import { DEFAULT_INVITATION, DEFAULT_REPLACEMENT, renderInvitation } from '../../services/invitations';
 import { updateEvent } from '../../services/storage';
 import { giversNeedingWishlistUpdate } from '../../services/wishlist';
+import { isLocalOnlyUrl, linkNeedsRecreating, publicBaseUrl } from '../../services/revealLinks';
 import type { ID } from '../../types/models';
 import { downloadText, safeFilename } from '../../utils/download';
 import { formatDateTime, plural } from '../../utils/format';
@@ -41,6 +42,17 @@ export default function ShareStep({ ctx }: { ctx: EventCtx }) {
   const withLinks = rows.filter((a) => draw.distribution[a.giverId]?.link);
   const missing = rows.filter((a) => !draw.distribution[a.giverId]?.link).map((a) => a.giverId);
   const sharedN = rows.filter((a) => draw.distribution[a.giverId]?.shared).length;
+  const base = publicBaseUrl();
+  const baseIsLocal = isLocalOnlyUrl(base);
+  const wrongAddress = withLinks.filter((a) => linkNeedsRecreating(draw.distribution[a.giverId]?.link)).map((a) => a.giverId);
+  const wrongHost = (() => {
+    const l = wrongAddress.length ? draw.distribution[wrongAddress[0]!]?.link : undefined;
+    try {
+      return l ? new URL(l).host : '';
+    } catch {
+      return '';
+    }
+  })();
 
   const isReplacement = (giverId: ID) => {
     const d = draw.distribution[giverId];
@@ -88,6 +100,27 @@ export default function ShareStep({ ctx }: { ctx: EventCtx }) {
             ) : null
           }
         />
+        {baseIsLocal ? (
+          <Callout tone="danger" className="mb-5" title="Links would only work on this computer">
+            You’re running the app at <strong>{base}</strong>, so new links would point there and family members couldn’t open them. Organise from your
+            published site instead (for example https://yourname.github.io/your-repo/), or set <code>VITE_PUBLIC_URL</code> in the <code>.env</code> file to that
+            address and restart the app.
+          </Callout>
+        ) : null}
+        {wrongAddress.length > 0 && !baseIsLocal ? (
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-berry-50 p-4 ring-1 ring-berry-200" role="alert">
+            <p className="text-sm text-berry-950">
+              <strong>
+                {plural(wrongAddress.length, 'link points', 'links point')} to {wrongHost || 'another address'}
+              </strong>{' '}
+              — other people can’t open {wrongAddress.length === 1 ? 'it' : 'them'}. Recreate them so they open <strong>{base}</strong>. The assignments stay exactly the
+              same; resend the new links (and QR codes).
+            </p>
+            <button type="button" className="btn-primary" disabled={busy} onClick={() => void run(() => issueLinks(event.id, draw.id, wrongAddress, 'reissue'), 'Links recreated')}>
+              Recreate {plural(wrongAddress.length, 'link')}
+            </button>
+          </div>
+        ) : null}
         {missing.length > 0 ? (
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-gold-100 p-4">
             <p className="text-sm">

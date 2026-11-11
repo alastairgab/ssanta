@@ -19,6 +19,8 @@ export default defineConfig({
     url: 'http://localhost:4173/secret-santa/',
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
+    // Tests open the links they create, so links must point at the local test server.
+    env: { VITE_PUBLIC_URL: 'http://localhost:4173/secret-santa/' },
   },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },

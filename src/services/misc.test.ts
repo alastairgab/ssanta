@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { parseCsv, toCsv } from '../utils/csv';
 import { canonicalJson } from '../utils/canonicalJson';
 import { parseBulkNames, parseHistoryCsv, parseParticipantCsv, resolveName } from './csvImport';
@@ -114,5 +114,26 @@ describe('repair solver', () => {
       { giverId: 'C', recipientId: 'A' },
     ], ['C']);
     expect(res.ok).toBe(false);
+  });
+});
+
+describe('public link address', () => {
+  it('uses VITE_PUBLIC_URL so links never point at localhost', async () => {
+    const { publicBaseUrl, linkNeedsRecreating, createRevealLink } = await import('./revealLinks');
+    vi.stubEnv('VITE_PUBLIC_URL', 'https://someone.github.io/ssanta');
+    expect(publicBaseUrl()).toBe('https://someone.github.io/ssanta/');
+    expect(linkNeedsRecreating('http://localhost:5173/#r=1.a.b')).toBe(true);
+    expect(linkNeedsRecreating('https://someone.github.io/ssanta/#r=1.a.b')).toBe(false);
+    const link = await createRevealLink({ v: 1, eid: 'e', did: 'd', dv: 1, iss: 1, gid: 'g', g: 'A', r: 'B', en: 'X', yr: 2026, th: 'classic', at: '' });
+    expect(link.startsWith('https://someone.github.io/ssanta/#r=1.')).toBe(true);
+    vi.unstubAllEnvs();
+  });
+
+  it('recognises addresses only reachable locally', async () => {
+    const { isLocalOnlyUrl } = await import('./revealLinks');
+    for (const u of ['http://localhost:5173/', 'http://127.0.0.1:4173/x/', 'http://192.168.1.20:5173/', 'file:///C:/x/index.html', 'http://app.localhost/']) {
+      expect(isLocalOnlyUrl(u)).toBe(true);
+    }
+    expect(isLocalOnlyUrl('https://adlspurs.github.io/ssanta/')).toBe(false);
   });
 });

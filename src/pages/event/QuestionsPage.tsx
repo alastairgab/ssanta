@@ -4,6 +4,7 @@ import { RelayInbox } from '../../components/RelayInbox';
 import { useQuestions, useReplies } from '../../hooks/useData';
 import { buildGiverAnswerLink, buildRecipientQuestionLink } from '../../services/anonymousQuestions';
 import { db } from '../../services/storage';
+import { linkNeedsRecreating } from '../../services/revealLinks';
 import { formatDateTime } from '../../utils/format';
 import type { EventCtx } from './EventWorkspace';
 
@@ -46,7 +47,7 @@ export default function QuestionsPage({ ctx }: { ctx: EventCtx }) {
                   </div>
                   <p className="mt-2 whitespace-pre-wrap break-words rounded-lg bg-pine-50 p-3 text-sm">“{q.text}”</p>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {q.recipientLink ? (
+                    {q.recipientLink && !linkNeedsRecreating(q.recipientLink) ? (
                       <CopyButton
                         text={`Hi ${nameOf(q.recipientId)}! Your Secret Santa has an anonymous question for you. Open this link to read it and reply:\n${q.recipientLink}`}
                         label="Copy message for recipient"
@@ -78,7 +79,7 @@ export default function QuestionsPage({ ctx }: { ctx: EventCtx }) {
                       <p className="text-xs text-pine-700">Reply from {nameOf(q.recipientId)} · {formatDateTime(r.repliedAt)}</p>
                       <p className="mt-1 whitespace-pre-wrap break-words">“{r.text}”</p>
                       <div className="mt-2 flex flex-wrap gap-2">
-                        {r.giverLink ? (
+                        {r.giverLink && !linkNeedsRecreating(r.giverLink) ? (
                           <CopyButton text={`Your Secret Santa recipient answered your question! Open this to read it:\n${r.giverLink}`} label={`Copy message for ${nameOf(q.giverId)}`} />
                         ) : (
                           <button
